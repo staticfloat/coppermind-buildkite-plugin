@@ -23,7 +23,7 @@ done
 export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(printf "%s" "${INPUT_TREEHASHES[@]}" | shasum -a 256 | awk '{ print $1 }')
 
 # Get listing of all files that exist with the given prefix
-S3_LISTING=$(AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} S3_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 ls --recursive "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}" | awk '{ $1=$2=$3=""; print $0 }' | sed 's/^[ \t]*//')
+S3_LISTING=$(AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 ls --recursive "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}" | awk '{ $1=$2=$3=""; print $0 }' | sed 's/^[ \t]*//')
 
 if [[ -n "${S3_LISTING}" ]]; then
     echo "Found previously uploaded artifacts: ${S3_LISTING}"
