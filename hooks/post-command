@@ -4,7 +4,9 @@ COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev
 source "${COPPERMIND_REPO}/lib/common.sh"
 
 # Skip uploading if the pre-command says we've already done this
-if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-no}" == "yes" ]]; then
+if [[ -f .buildkite_plugin_coppermind_skip_command ]]; then
+    rm -f .buildkite_plugin_coppermind_skip_command
+    echo "Skipping upload, as we had a cache hit"
     exit 0
 fi
 

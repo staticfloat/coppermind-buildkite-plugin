@@ -2,7 +2,6 @@
 
 # Skip running the user's commands if the pre-command decided it should be so
 if [[ -f .buildkite_plugin_coppermind_skip_command ]]; then
-    rm -f .buildkite_plugin_coppermind_skip_command
     buildkite-agent annotate --style info "Skipping previously completed command"
     exit 0
 fi
