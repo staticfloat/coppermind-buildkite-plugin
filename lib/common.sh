@@ -32,5 +32,8 @@ function join_by {
 }
 
 # The prefix we'll upload/download stuff to/from
-S3_PREFIX="s3://${BUILDKITE_PLUGIN_COPPERMIND_S3_PREFIX}/${INPUT_HASH}"
+S3_PREFIX="${BUILDKITE_PLUGIN_COPPERMIND_S3_PREFIX}"
+if [[ "${S3_PREFIX}" != s3://* ]]; then
+    S3_PREFIX="s3://${S3_PREFIX}"
+fi
 BUILDKITE_S3_DEFAULT_REGION=${BUILDKITE_PLUGIN_COPPERMIND_S3_REGION:-us-east-1}

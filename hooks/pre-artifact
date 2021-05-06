@@ -19,4 +19,4 @@ while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}_PATTERN" ]]; do
     PATTERN_IDX=$((${PATTERN_IDX} + 1))
 done
 
-buildkite-agent artifact upload $(join_by ";" ${OUTPUT_PATTERNS[@]}) "${S3_PREFIX}"
+buildkite-agent artifact upload $(join_by ";" ${OUTPUT_PATTERNS[@]}) "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
