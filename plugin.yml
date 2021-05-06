@@ -6,13 +6,13 @@ configuration:
     inputs:
       type: array
       properties:
-        pattern:
+        path:
           type: string
           minimum: 1
     outputs:
       type: array
       properties:
-        pattern:
+        path:
           type: string
           minimum: 1
     s3_prefix:
