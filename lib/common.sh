@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # For debugging
-set | grep BUILDKITE_PLUGIN_COPPERMIND
-set -x
+#set | grep BUILDKITE_PLUGIN_COPPERMIND
 
 # Initialize the features we need
 set -eou pipefail
