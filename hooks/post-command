@@ -11,12 +11,14 @@ fi
 # Upload each of our patterns, using buildkite-agent artifact to do so
 OUTPUT_PATTERNS=()
 PATTERN_IDX=0
-while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}_PATTERN" ]]; do
+while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}_PATH" ]]; do
     # Fetch the pattern
-    PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}_PATTERN"
+    PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}_PATH"
     OUTPUT_PATTERNS+=( "${!PATTERN_VARNAME}" )
 
     PATTERN_IDX=$((${PATTERN_IDX} + 1))
 done
 
-buildkite-agent artifact upload $(join_by ";" ${OUTPUT_PATTERNS[@]}) "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
+echo "output_patterns: ${OUTPUT_PATTERNS[@]}"
+
+buildkite-agent artifact upload "$(join_by ";" ${OUTPUT_PATTERNS[@]})" "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
