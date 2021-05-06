@@ -1,0 +1,22 @@
+name: Coppermind
+description: Memoize buildkite steps based on treehashes
+author: https://github.com/staticfloat
+configuration:
+  properties:
+    inputs:
+      type: array
+      properties:
+        pattern:
+          type: string
+          minimum: 1
+    outputs:
+      type: array
+      properties:
+        pattern:
+          type: string
+          minimum: 1
+    s3_prefix:
+      type: string
+    s3_region:
+      type: string
+  additionalProperties: false

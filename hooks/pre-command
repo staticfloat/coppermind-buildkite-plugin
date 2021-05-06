@@ -1,0 +1,31 @@
+#!/bin/bash
+
+COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
+source "${COPPERMIND_REPO}/lib/common.sh"
+
+# Start hashing up our input glob patterns
+PATTERN_IDX=0
+INPUT_TREEHASHES=()
+while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}_PATTERN" ]]; do
+    # Fetch the pattern
+    PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}_PATTERN"
+    PATTERN="${!PATTERN_VARNAME}"
+
+    # Calculate treehash
+    TREEHASH="$(collect_glob_pattern "${PATTERN}" | calc_treehash)"
+    echo "[${PATTERN}] treehash: ${TREEHASH}"
+    INPUT_TREEHASHES+=( "${TREEHASH}" )
+
+    PATTERN_IDX=$((${PATTERN_IDX} + 1))
+done
+
+# Hash all treehashes together to get full input hash
+INPUT_HASH=$(printf "%s" "${INPUT_TREEHASHES[@]}" | shasum -a 256 | awk '{ print $1 }')
+
+# Get listing of all files that exist with the given prefix
+S3_LISTING=$(aws s3 ls --recursive "${S3_PREFIX}" | awk '{ $1=$2=$3=""; print $0 }' | sed 's/^[ \t]*//')
+
+if [[ -n "${S3_LISTING}" ]]; then
+    echo "Found previously uploaded artifacts: ${S3_LISTING}"
+    BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND="yes"
+fi
