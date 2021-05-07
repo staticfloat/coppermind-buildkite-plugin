@@ -94,13 +94,26 @@ BUILDKITE_S3_DEFAULT_REGION=${BUILDKITE_PLUGIN_COPPERMIND_S3_REGION:-us-east-1}
 # Parse input/output patterns
 INPUT_PATTERNS=()
 PATTERN_IDX=0
-while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}" ]]; do
-    # Fetch the pattern
-    PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}"
-    INPUT_PATTERNS+=( "${!PATTERN_VARNAME}" )
+if [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
+    # If we have an `input_from` specification, we don't parse `inputs`
+    export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(buildkite-agent meta-data get "coppermind-${BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM}-inputhash")
+fi
 
-    PATTERN_IDX=$((${PATTERN_IDX} + 1))
-done
+if [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH" ]]; then
+    while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}" ]]; do
+        # Fetch the pattern
+        PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}"
+        INPUT_PATTERNS+=( "${!PATTERN_VARNAME}" )
+
+        PATTERN_IDX=$((${PATTERN_IDX} + 1))
+    done
+fi
+
+if [[ ${#INPUT_PATTERNS[@]} == 0 ]] && [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
+    echo "ERROR: No inputs or input-from specified!" >&2
+    buildkite-agent annotate --style error "No inputs or input_from specified!"
+    exit 1
+fi
 
 OUTPUT_PATTERNS=()
 PATTERN_IDX=0
@@ -111,3 +124,9 @@ while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_${PATTERN_IDX}" ]]; do
 
     PATTERN_IDX=$((${PATTERN_IDX} + 1))
 done
+
+if [[ ${PATTERN_IDX} == 0 ]]; then
+    echo "ERROR: No output specification!" >&2
+    buildkite-agent annotate --style error "No outputs specified!"
+    exit 1
+fi
