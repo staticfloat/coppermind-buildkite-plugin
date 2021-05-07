@@ -5,16 +5,8 @@ configuration:
   properties:
     inputs:
       type: array
-      properties:
-        path:
-          type: string
-          minimum: 1
     outputs:
       type: array
-      properties:
-        path:
-          type: string
-          minimum: 1
     s3_prefix:
       type: string
     s3_region:
