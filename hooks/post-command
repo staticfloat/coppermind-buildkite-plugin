@@ -5,9 +5,10 @@ source "${COPPERMIND_REPO}/lib/common.sh"
 
 # Skip uploading if the pre-command says we've already done this
 if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-no}" == "yes" ]]; then
-    echo "Skipping upload, as we had a cache hit"
+    echo "--- Skipping upload"
     exit 0
 fi
 
 # Upload each of our patterns, using buildkite-agent artifact to do so
+echo "--- Uploading artifacts"
 buildkite-agent artifact upload "$(join_by ";" "${OUTPUT_PATTERNS[@]}")" "s3://${S3_BUCKET}/${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Skip running the user's commands if the pre-command decided it should be so
-if [[ -f .buildkite_plugin_coppermind_skip_command ]]; then
+if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-no}" == "yes" ]]; then
     echo "--- Skipping previously completed user command"
     buildkite-agent annotate --style info "coppermind: Skipping previously completed command"
     exit 0
