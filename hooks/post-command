@@ -4,7 +4,7 @@ COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev
 source "${COPPERMIND_REPO}/lib/common.sh"
 
 # Skip uploading if we either skipped the command, or were given our artifacts from a previous step via `input_from`
-if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-no}" == "yes" ]] && [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
+if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-no}" == "yes" ]] || [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
     echo "--- Skipping upload"
     exit 0
 fi
