@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
 export BUILDKITE_PLUGIN_COPPERMIND_S3_PREFIX="s3://julialang-buildkite-artifacts/testing"
+export BUILDKITE_PLUGIN_COPPERMIND_INPUTS_0=""
+export BUILDKITE_PLUGIN_COPPERMIND_OUTPUTS_0=""
 
 load "$BATS_PATH/load.bash"
 source "/plugin/lib/common.sh"
