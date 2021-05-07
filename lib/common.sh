@@ -92,14 +92,14 @@ BUILDKITE_S3_DEFAULT_REGION=${BUILDKITE_PLUGIN_COPPERMIND_S3_REGION:-us-east-1}
 
 
 # Parse input/output patterns
-INPUT_PATTERNS=()
-PATTERN_IDX=0
 if [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
     # If we have an `input_from` specification, we don't parse `inputs`
     export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(buildkite-agent meta-data get "coppermind-${BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM}-inputhash")
 fi
 
+INPUT_PATTERNS=()
 if [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH" ]]; then
+    PATTERN_IDX=0
     while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}" ]]; do
         # Fetch the pattern
         PATTERN_VARNAME="BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}"
@@ -109,7 +109,7 @@ if [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH" ]]; then
     done
 fi
 
-if [[ ${#INPUT_PATTERNS[@]} == 0 ]] && [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
+if [[ ${#INPUT_PATTERNS[@]} == 0 ]] && [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH" ]]; then
     echo "ERROR: No inputs or input-from specified!" >&2
     buildkite-agent annotate --style error "No inputs or input_from specified!"
     exit 1
