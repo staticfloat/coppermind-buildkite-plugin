@@ -25,10 +25,14 @@ if [[ ${#S3_LISTING[@]} -gt 0 ]]; then
         export BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND="yes"
     fi
 
+    echo "OUTPUT_PATTERNS: ${OUTPUT_PATTERNS[@]}"
     OUTPUT_GLOB="$(join_by "|" "${OUTPUT_PATTERNS[@]}")"
+    echo "OUTPUT_GLOB: ${OUTPUT_GLOB}"
     for URL in "${S3_LISTING[@]}"; do
+        echo "URL: ${URL}"
         # If this URL matches any part of our output glob, download it
         FILE_PATH="${URL#s3://${S3_BUCKET}/${S3_PREFIX}/}"
+        echo "FILE_PATH: ${FILE_PATH}"
         if [[ "${FILE_PATH}" == @($OUTPUT_GLOB) ]]; then
             echo "Downloading ${FILE_PATH}..."
             AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 cp "s3://${S3_BUCKET}/${URL}" .
