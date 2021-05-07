@@ -25,7 +25,7 @@ if [[ ${#S3_LISTING[@]} -gt 0 ]]; then
     OUTPUT_GLOB="$(join_by "|" "${OUTPUT_PATTERNS[@]}")"
     for URL in "${S3_LISTING[@]}"; do
         # If this URL matches any part of our output glob, download it
-        FILE_PATH="${URL#s3://${S3_BUCKET}/${S3_PREFOX}/}"
+        FILE_PATH="${URL#s3://${S3_BUCKET}/${S3_PREFIX}/}"
         if [[ "${FILE_PATH}" == @($OUTPUT_GLOB) ]]; then
             AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 cp "s3://${S3_BUCKET}/${URL}" .
         fi
