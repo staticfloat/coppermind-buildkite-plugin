@@ -20,7 +20,7 @@ while [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUTS_${PATTERN_IDX}_PATH" ]]; do
 done
 
 # Hash all treehashes together to get full input hash
-export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(printf "%s" "${INPUT_TREEHASHES[@]}" | shasum -a 256 | awk '{ print $1 }')
+export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(printf "%s" "${INPUT_TREEHASHES[@]}" | calc_shasum)
 
 # Get listing of all files that exist with the given prefix
 S3_LISTING=$((AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 ls --recursive "${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}" || true) | awk '{ $1=$2=$3=""; print $0 }' | sed 's/^[ \t]*//')
