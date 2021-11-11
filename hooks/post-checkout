@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Ensure `aws` is installed
-apt update
-apt install -y awscli
