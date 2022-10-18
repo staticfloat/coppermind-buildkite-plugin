@@ -7,22 +7,11 @@ configuration:
     inputs:
       type: array
 
-    # If a future step wants to make use of the artifacts uploaded in a previous step, set the
-    # `input_from` parameter to the `key` of the previous step that uploaded the artifacts.
-    # Note: providing this will disable the use of `inputs`.
-    input_from:
-      type: string
-
-    # When uploading artifacts, use this array of glob patterns to select what to upload.
-    # When downloading artifacts, use this array of glob patterns to select what to download.
-    outputs:
-      type: array
-    
     # Set this to something like `s3://bucket/prefix`
     s3_prefix:
       type: string
-    
-    # This defaults to `us-east-1`
-    s3_region:
+
+    # Give a name to the artifact that gets uploaded
+    artifact_name:
       type: string
   additionalProperties: false

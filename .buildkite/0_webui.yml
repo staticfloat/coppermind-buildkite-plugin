@@ -1,0 +1,23 @@
+# NOTE: This `pipeline.yml` file is saved in the WebUI.
+# Editing it here has no effect, we simply include this
+# to keep track of what is implemented in the WebUI!
+
+steps:
+  # In the WebUI, the `cryptic` launch job _must_ be the first job to run
+  - label: ":rocket: Launch pipelines"
+    plugins:
+      - staticfloat/cryptic#8b9e5dc0c6b321d56a565c512cb55e2371799f26:
+          signed_pipelines:
+            - pipeline: .buildkite/launch_integration_tests.yml
+              signature_file: .buildkite/launch_integration_tests.yml.signature
+              inputs:
+                - .buildkite/integration_tests.yml
+                - lib/s3*.sh
+                - hooks/*
+          verbose: true
+    command: "true"
+    agents:
+      queue: "juliaecosystem"
+      cryptic_capable: "true"
+      # Eventually, fix the windows problems in cryptic
+      os: "linux"

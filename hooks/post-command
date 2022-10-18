@@ -1,8 +1,23 @@
 #!/bin/bash
 
+set -euo pipefail
 COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 source "${COPPERMIND_REPO}/lib/common.sh"
 
-# Upload each of our patterns, using buildkite-agent artifact to do so
-echo "--- Uploading artifacts"
-buildkite-agent artifact upload "$(join_by ";" "${OUTPUT_PATTERNS[@]}")" "s3://${S3_BUCKET}/${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
+# We did not skip the command, so we should upload a tarball to our cache
+if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
+    echo "--- Compressing artifact cache"
+    # Create zstd-compressed tarball of the things that buildkite is about to upload:
+    ARTIFACTS=( $(tr ';' ' ' <<<"${BUILDKITE_ARTIFACT_PATHS}") )
+    echo "Compressing ${#ARTIFACTS[@]} output artifacts:"
+    for ARTIFACT in "${ARTIFACTS[@]}"; do
+        echo " -> ${ARTIFACT}"
+        echo "${ARTIFACT}" > "${ARTIFACT_NAME}.tar.zst.list"
+    done
+    tar -c --files-from "${ARTIFACT_NAME}.tar.zst.list" | zstd -T0 > "${ARTIFACT_NAME}.tar.zst"
+    
+    # Push the tarball up to our cache:
+    ls -la "${ARTIFACT_NAME}.tar.zst"
+    "${COPPERMIND_REPO}/lib/s3-put.sh" "${ARTIFACT_NAME}.tar.zst" "s3://${S3_BUCKET}/${S3_PREFIX}/${INPUT_HASH}/${ARTIFACT_NAME}.tar.zst"
+    rm -f "${ARTIFACT_NAME}.tar.zst" "${ARTIFACT_NAME}.tar.zst.list"
+fi

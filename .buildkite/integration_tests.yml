@@ -1,0 +1,87 @@
+coppermind_init: &coppermind_init
+  post-checkout: |
+    # Oh windows
+    export MSYS=winsymlinks:nativestrict
+    mkdir -p .buildkite/plugins/coppermind
+    cp -Ra hooks lib plugin.yml README.md .buildkite/plugins/coppermind/
+
+    mkdir -p inputs
+    echo ${BUILDKITE_BUILD_ID} > inputs/foo
+
+steps:
+  - group: "${AGENT_OS?} ${AGENT_ARCH?}"
+    key: "${AGENT_OS?}-${AGENT_ARCH?}"
+    steps:
+      - label: "generate ${AGENT_OS?} ${AGENT_ARCH?}"
+        key: ${AGENT_OS?}-${AGENT_ARCH?}-generate
+        agents:
+          queue: "juliaecosystem"
+          os: "${AGENT_OS?}"
+          arch: "${AGENT_ARCH?}"
+          cryptic_capable: true
+        plugins:
+          - staticfloat/cryptic#8b9e5dc0c6b321d56a565c512cb55e2371799f26:
+              variables:
+                - AWS_ACCESS_KEY_ID="U2FsdGVkX193UzyAJsIOxCzr/kg0XF8UY1bd72vSWNrWnb5amSLdDltikrXrxSUX"
+                - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
+          - staticfloat/metahook#sf/windows_backslashes:
+              <<: *coppermind_init
+          - "./.buildkite/plugins/coppermind":
+              inputs:
+                - "inputs/**"
+              s3_prefix: "s3://julialang-ephemeral/coppermind-selftests/generate"
+        commands: |
+          # Generate some outputs:
+          mkdir outputs
+          echo "world" > outputs/hello
+          echo "kenobi" > outputs/general
+        artifacts:
+          - "outputs/**"
+        env:
+          BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
+
+      - label: "check ${AGENT_OS?} ${AGENT_ARCH?}"
+        depends_on:
+          - "${AGENT_OS?}-${AGENT_ARCH?}-generate"
+        agents:
+          queue: "juliaecosystem"
+        commands: |
+          # Use wildcards here to get around forward/backward slash problems
+          buildkite-agent artifact download --step=${AGENT_OS?}-${AGENT_ARCH?}-generate outputs*hello .
+          buildkite-agent artifact download --step=${AGENT_OS?}-${AGENT_ARCH?}-generate outputs*general .
+
+          echo -n "hello: "
+          cat outputs/hello
+          [ "$$(cat outputs/hello)" == "world" ]
+          echo -n "general: "
+          cat outputs/general
+          [ "$$(cat outputs/general)" == "kenobi" ]
+
+      - label: "cache hit ${AGENT_OS?} ${AGENT_ARCH?}"
+        depends_on:
+          - "${AGENT_OS?}-${AGENT_ARCH?}-generate"
+        agents:
+          queue: "juliaecosystem"
+          os: "${AGENT_OS?}"
+          arch: "${AGENT_ARCH?}"
+          cryptic_capable: true
+        plugins:
+          - staticfloat/cryptic#8b9e5dc0c6b321d56a565c512cb55e2371799f26:
+              variables:
+                - AWS_ACCESS_KEY_ID="U2FsdGVkX193UzyAJsIOxCzr/kg0XF8UY1bd72vSWNrWnb5amSLdDltikrXrxSUX"
+                - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
+          - staticfloat/metahook#sf/windows_backslashes:
+              <<: *coppermind_init
+          - "./.buildkite/plugins/coppermind":
+              inputs:
+                - "inputs/**"
+              s3_prefix: "s3://julialang-ephemeral/coppermind-selftests/generate"
+              # Use the same artifact name as is implicitly used by the generator,
+              # so that we look in the same cache location.
+              artifact_name: "${AGENT_OS?}-${AGENT_ARCH?}-generate"
+        commands: |
+          # This _always_ gets skipped, because we always cache hit above
+          echo "ERROR: this should have been skipped due to a successful coppermind cache hit!"
+          false
+        env:
+          BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
