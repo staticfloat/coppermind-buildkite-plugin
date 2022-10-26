@@ -43,4 +43,3 @@ ARTIFACT_NAME="${BUILDKITE_PLUGIN_COPPERMIND_ARTIFACT_NAME:-${BUILDKITE_STEP_KEY
 if [[ -z "${ARTIFACT_NAME}" ]]; then
     die "Must provide either a buildkite step key or an artifact_name!"
 fi
-echo "ARTIFACT_NAME: ${ARTIFACT_NAME}"
