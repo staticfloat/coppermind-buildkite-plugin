@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -euo pipefail
+COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
+
+# Escape hatch for non-recursive clones
+if [[ ! -d "${COPPERMIND_REPO}/lib/bash-tools/lib" ]]; then
+    git -C "${COPPERMIND_REPO}" submodule update --init
+fi
