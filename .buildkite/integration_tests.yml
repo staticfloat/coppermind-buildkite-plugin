@@ -58,6 +58,7 @@ steps:
           [ "$$(cat outputs/general)" == "kenobi" ]
 
       - label: "cache hit ${AGENT_OS?} ${AGENT_ARCH?}"
+        key: "${AGENT_OS?}-${AGENT_ARCH?}-cache-hit"
         depends_on:
           - "${AGENT_OS?}-${AGENT_ARCH?}-generate"
         agents:
@@ -83,5 +84,24 @@ steps:
           # This _always_ gets skipped, because we always cache hit above
           echo "ERROR: this should have been skipped due to a successful coppermind cache hit!"
           false
+        artifacts:
+          - "outputs/**"
         env:
           BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
+
+      - label: "doublecheck ${AGENT_OS?} ${AGENT_ARCH?}"
+        depends_on:
+          - "${AGENT_OS?}-${AGENT_ARCH?}-cache-hit"
+        agents:
+          queue: "juliaecosystem"
+        commands: |
+          # Use wildcards here to get around forward/backward slash problems
+          buildkite-agent artifact download --step=${AGENT_OS?}-${AGENT_ARCH?}-cache-hit outputs*hello .
+          buildkite-agent artifact download --step=${AGENT_OS?}-${AGENT_ARCH?}-cache-hit outputs*general .
+
+          echo -n "hello: "
+          cat outputs/hello
+          [ "$$(cat outputs/hello)" == "world" ]
+          echo -n "general: "
+          cat outputs/general
+          [ "$$(cat outputs/general)" == "kenobi" ]
