@@ -12,7 +12,7 @@ if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
     echo "Compressing ${#ARTIFACTS[@]} output artifacts:"
     for ARTIFACT in "${ARTIFACTS[@]}"; do
         echo " -> ${ARTIFACT}"
-        echo "${ARTIFACT}" > "${ARTIFACT_NAME}.tar.zst.list"
+        echo "${ARTIFACT}" >> "${ARTIFACT_NAME}.tar.zst.list"
     done
     tar -c --files-from "${ARTIFACT_NAME}.tar.zst.list" | zstd -T0 > "${ARTIFACT_NAME}.tar.zst"
     
