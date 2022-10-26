@@ -1,44 +1,16 @@
 #!/bin/bash
 
+set -euo pipefail
 COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 source "${COPPERMIND_REPO}/lib/common.sh"
 
-# Start hashing up our input glob patterns, unless we've already been supplied one by `input_from`
-if [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH" ]]; then
-    INPUT_TREEHASHES=()
-    for PATTERN in "${INPUT_PATTERNS[@]}"; do
-        INPUT_TREEHASHES+=( "$(collect_glob_pattern "${PATTERN}" | calc_treehash)" )
-    done
-
-    # Hash all treehashes together to get full input hash
-    export BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH=$(printf "%s" "${INPUT_TREEHASHES[@]}" | calc_shasum)
-    buildkite-agent meta-data set "coppermind-${BUILDKITE_STEP_KEY}-inputhash" "${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
-fi
-
-# Get listing of all files that exist with the given prefix
-S3_ROOT="s3://${S3_BUCKET}/${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}"
-S3_LISTING=( $((AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 ls --recursive "${S3_ROOT}" || true) | awk '{ $1=$2=$3=""; print $0 }' | sed 's/^[ \t]*//') )
-
-if [[ ${#S3_LISTING[@]} -gt 0 ]]; then
-    echo "Found ${#S3_LISTING[@]} previously uploaded artifacts"
-    if [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
-        export BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND="yes"
-    fi
-
-    OUTPUT_GLOB="$(join_by "|" "${OUTPUT_PATTERNS[@]}")"
-    for URL in "${S3_LISTING[@]}"; do
-        # If this URL matches any part of our output glob, download it
-        FILE_PATH="${URL#${S3_PREFIX}/${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}/}"
-        if [[ "${FILE_PATH}" == @($OUTPUT_GLOB) ]]; then
-            echo "Downloading ${FILE_PATH}..."
-            FILE_DIR="$(dirname "${FILE_PATH}")"
-            mkdir -p "${FILE_DIR}"
-            AWS_ACCESS_KEY_ID=${BUILDKITE_S3_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${BUILDKITE_S3_SECRET_ACCESS_KEY} aws s3 cp "s3://${S3_BUCKET}/${URL}" "${FILE_DIR}"
-        fi
-    done
-elif [[ -v "BUILDKITE_PLUGIN_COPPERMIND_INPUT_FROM" ]]; then
-    # If `input_from` was specified, we fail out if we can't find any artifacts
-    echo "ERROR: No previously-calculated artifacts found for '${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}'"
-    buildkite-agent annotate --style error "No previously-calculated artifacts found for '${BUILDKITE_PLUGIN_COPPERMIND_INPUT_HASH}'"
-    exit 1
+# Let's see if we can download all of our outputs from 
+if ! "${COPPERMIND_REPO}/lib/s3-get.sh" "s3://${S3_BUCKET}/${S3_PREFIX}/${INPUT_HASH}/${ARTIFACT_NAME}.tar.zst" "${ARTIFACT_NAME}.tar.zst"; then
+    # If we were unable to download it, we'll need to upload it to S3 at the end as well
+    export BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND="no"
+else
+    # If we were able to download it, extract it, and skip the command step, where we will upload the artifacts
+    echo "--- Extracting cached archive"
+    zstd -c -d "${ARTIFACT_NAME}.tar.zst" | tar -vx
+    export BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND="yes"
 fi

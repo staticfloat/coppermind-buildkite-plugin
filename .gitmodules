@@ -1,0 +1,3 @@
+[submodule "lib/bash-tools"]
+	path = lib/bash-tools
+	url = https://github.com/JuliaCI/buildkite-bash-tools
