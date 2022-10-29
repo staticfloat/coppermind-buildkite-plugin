@@ -19,3 +19,27 @@ steps:
       unset BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET
     env:
       BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
+
+  # These jobs are all expected to fail, so we put them in the same group
+  - group: ":boom: Failing Jobs"
+    steps:
+      - label: ":rocket: :boom: Launch failing tests"
+        agents:
+          queue: "juliaecosystem"
+        commands: |
+          # These variables are available for templating in our child pipelines
+          export AGENT_OS AGENT_ARCH BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET
+
+          for AGENT_OS in linux macos windows; do
+            AGENT_ARCH="x86_64"
+            buildkite-agent pipeline upload ".buildkite/fail_jobs.yml"
+          done
+
+          # Test on another architecture just for fun
+          for AGENT_OS in linux macos; do
+            AGENT_ARCH=aarch64
+            buildkite-agent pipeline upload ".buildkite/fail_jobs.yml"
+          done
+          unset BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET
+        env:
+          BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}

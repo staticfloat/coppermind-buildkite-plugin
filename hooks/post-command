@@ -5,7 +5,8 @@ COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev
 source "${COPPERMIND_REPO}/lib/common.sh"
 
 # We did not skip the command, so we should upload a tarball to our cache
-if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
+echo "BUILDKITE_COMMAND_EXIT_STATUS: ${BUILDKITE_COMMAND_EXIT_STATUS}"
+if [[ "${BUILDKITE_COMMAND_EXIT_STATUS}" == "0" ]] && [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
     echo "--- Compressing artifact cache"
     # Create zstd-compressed tarball of the things that buildkite is about to upload:
     ARTIFACTS=( $(tr ';' ' ' <<<"${BUILDKITE_ARTIFACT_PATHS}") )
@@ -20,4 +21,5 @@ if [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
     ls -la "${ARTIFACT_NAME}.tar.zst"
     "${COPPERMIND_REPO}/lib/s3-put.sh" "${ARTIFACT_NAME}.tar.zst" "s3://${S3_BUCKET}/${S3_PREFIX}/${INPUT_HASH}/${ARTIFACT_NAME}.tar.zst"
     rm -f "${ARTIFACT_NAME}.tar.zst" "${ARTIFACT_NAME}.tar.zst.list"
+    export BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED=true
 fi

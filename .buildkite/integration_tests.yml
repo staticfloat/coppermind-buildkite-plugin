@@ -26,6 +26,11 @@ steps:
                 - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
           - staticfloat/metahook#sf/windows_backslashes:
               <<: *coppermind_init
+              post-artifact: |
+                # Ensure that we did upload
+                set -e
+                [[ "$${BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED:-false}" == "true" ]]
+                echo "Ensured that tarball upload was properly recorded!"
           - "./.buildkite/plugins/coppermind":
               inputs:
                 - "inputs/**"
@@ -73,6 +78,11 @@ steps:
                 - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
           - staticfloat/metahook#sf/windows_backslashes:
               <<: *coppermind_init
+              post-artifact: |
+                # Ensure that we did not upload anything
+                set -e
+                [[ "$${BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED:-false}" == "false" ]]
+                echo "Ensured that we did not upload anything!"
           - "./.buildkite/plugins/coppermind":
               inputs:
                 - "inputs/**"
