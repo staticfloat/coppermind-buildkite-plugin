@@ -5,6 +5,7 @@ COPPERMIND_REPO="$( cd "$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )" &> /dev
 source "${COPPERMIND_REPO}/lib/common.sh"
 
 # We did not skip the command, so we should upload a tarball to our cache
+echo "BUILDKITE_COMMAND_EXIT_STATUS: ${BUILDKITE_COMMAND_EXIT_STATUS}"
 if [[ "${BUILDKITE_COMMAND_EXIT_STATUS}" == "0" ]] && [[ "${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" != "yes" ]]; then
     echo "--- Compressing artifact cache"
     # Create zstd-compressed tarball of the things that buildkite is about to upload:

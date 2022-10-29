@@ -29,7 +29,8 @@ steps:
               post-artifact: |
                 # Ensure that we did upload
                 set -e
-                [[ -v "BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED" ]]
+                [[ "$${BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED:-false}" == "true" ]]
+                echo "Ensured that tarball upload was properly recorded!"
           - "./.buildkite/plugins/coppermind":
               inputs:
                 - "inputs/**"
@@ -80,7 +81,8 @@ steps:
               post-artifact: |
                 # Ensure that we did not upload anything
                 set -e
-                [[ ! -v "BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED" ]]
+                [[ "$${BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED:-false}" == "false" ]]
+                echo "Ensured that we did not upload anything!"
           - "./.buildkite/plugins/coppermind":
               inputs:
                 - "inputs/**"
@@ -113,44 +115,3 @@ steps:
           echo -n "general: "
           cat outputs/general
           [ "$$(cat outputs/general)" == "kenobi" ]
-
-      
-      - label: "generate fail ${AGENT_OS?} ${AGENT_ARCH?}"
-        key: ${AGENT_OS?}-${AGENT_ARCH?}-generate-fail
-        soft_fail:
-          - exit_status: 1
-        agents:
-          queue: "juliaecosystem"
-          os: "${AGENT_OS?}"
-          arch: "${AGENT_ARCH?}"
-          cryptic_capable: true
-        plugins:
-          - staticfloat/cryptic#8b9e5dc0c6b321d56a565c512cb55e2371799f26:
-              variables:
-                - AWS_ACCESS_KEY_ID="U2FsdGVkX193UzyAJsIOxCzr/kg0XF8UY1bd72vSWNrWnb5amSLdDltikrXrxSUX"
-                - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
-          - staticfloat/metahook#sf/windows_backslashes:
-              <<: *coppermind_init
-              post-artifact: |
-                # Ensure that we did not upload anything
-                set -e
-                if [[ -v "BUILDKITE_PLUGIN_COPPERMIND_TARBALL_UPLOADED" ]]; then
-                  # `exit 2` will fail the build, as `soft_fail` is configured to only ignore `exit 1`
-                  exit 2
-                fi
-                exit 2
-          - "./.buildkite/plugins/coppermind":
-              inputs:
-                - "inputs/**"
-              s3_prefix: "s3://julialang-ephemeral/coppermind-selftests/generate"
-        commands: |
-          # Generate some outputs:
-          mkdir outputs
-          echo "world" > outputs/hello
-
-          # Purposefully fail, so that we don't fill the cache.
-          exit 1
-        artifacts:
-          - "outputs/**"
-        env:
-          BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
