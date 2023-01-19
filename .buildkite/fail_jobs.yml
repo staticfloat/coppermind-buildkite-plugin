@@ -11,6 +11,7 @@ coppermind_init: &coppermind_init
 steps:
   - group: ":boom: Failing Jobs"
     steps:
+      # This test ensures that a failing job does not upload anything to the S3 bucket
       - label: "generate fail ${AGENT_OS?} ${AGENT_ARCH?}"
         key: ${AGENT_OS?}-${AGENT_ARCH?}-generate-fail
         soft_fail:
