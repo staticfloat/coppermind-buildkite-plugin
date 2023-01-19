@@ -5,8 +5,18 @@ coppermind_init: &coppermind_init
     mkdir -p .buildkite/plugins/coppermind
     cp -Ra hooks lib plugin.yml README.md .buildkite/plugins/coppermind/
 
+    # Create inputs that get hashed; make it complex, with symlinks and symlinks to directories
     mkdir -p inputs
-    echo ${BUILDKITE_BUILD_ID} > inputs/foo
+    echo ${BUILDKITE_BUILD_ID} > inputs/build-id
+    
+    # Create content in separate directory
+    mkdir -p external
+    echo "$${SYMLINK_CONTENT:-content}" > external/file
+    
+    # Create symlinks to external content, so we can ensure hashing follows symlinks
+    ln -s ../external inputs/external
+    ln -s ../external/file inputs/external_file
+
 
 steps:
   - group: "${AGENT_OS?} ${AGENT_ARCH?}"
@@ -62,6 +72,8 @@ steps:
           cat outputs/general
           [ "$$(cat outputs/general)" == "kenobi" ]
 
+
+      # This test ensures that on a cache hit we skip our command and do not upload a tarball to S3.
       - label: "cache hit ${AGENT_OS?} ${AGENT_ARCH?}"
         key: "${AGENT_OS?}-${AGENT_ARCH?}-cache-hit"
         depends_on:
@@ -98,6 +110,49 @@ steps:
           - "outputs/**"
         env:
           BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
+
+      # This test ensures that symlinks which point to outside files are followed, and if those
+      # files are modified, the treehash used by coppermind changes.  This is ensured with a `post-artifact`
+      # hook that looks at the environment variables set by coppermind.  The content generated in the
+      # `coppermind_init` post-checkout hook is altered by setting the `SYMLINK_CONTENT` envvar.
+      - label: "cache miss (symlink check) ${AGENT_OS?} ${AGENT_ARCH?}"
+        key: "${AGENT_OS?}-${AGENT_ARCH?}-cache-miss-symlink-check"
+        depends_on:
+          - "${AGENT_OS?}-${AGENT_ARCH?}-generate"
+        agents:
+          queue: "juliaecosystem"
+          os: "${AGENT_OS?}"
+          arch: "${AGENT_ARCH?}"
+          cryptic_capable: true
+        plugins:
+          - staticfloat/cryptic#8b9e5dc0c6b321d56a565c512cb55e2371799f26:
+              variables:
+                - AWS_ACCESS_KEY_ID="U2FsdGVkX193UzyAJsIOxCzr/kg0XF8UY1bd72vSWNrWnb5amSLdDltikrXrxSUX"
+                - AWS_SECRET_ACCESS_KEY="U2FsdGVkX19Yl56YvPLAS8Gp/LS+PPe2BkKnLBdCVmWRsQdLxj8kUZcpC+HDRarA3JjUWqZa3Kt5bnpQKlek5A=="
+          - staticfloat/metahook#sf/windows_backslashes:
+              <<: *coppermind_init
+              post-artifact: |
+                # Ensure that our symlink modifications do in fact change the treehash and cause us to cache miss:
+                set -e
+                [[ "$${BUILDKITE_PLUGIN_COPPERMIND_SKIP_COMMAND:-}" == "no" ]]
+                echo "Ensured that we cache missed!"
+          - "./.buildkite/plugins/coppermind":
+              inputs:
+                - "inputs/**"
+              s3_prefix: "s3://julialang-ephemeral/coppermind-selftests/generate"
+              # Use the same artifact name as is implicitly used by the generator,
+              # so that we look in the same cache location (although we expect to cache miss)
+              artifact_name: "${AGENT_OS?}-${AGENT_ARCH?}-generate"
+        commands: |
+          # Our true check is in the `post-artifact` metahook hook.
+          mkdir outputs
+          echo "world" > outputs/hello
+          echo "kenobi" > outputs/general
+        artifacts:
+          - "outputs/**"
+        env:
+          BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET: ${BUILDKITE_PLUGIN_CRYPTIC_BASE64_SIGNED_JOB_ID_SECRET?}
+          SYMLINK_CONTENT: "something other than the typical content"
 
       - label: "doublecheck ${AGENT_OS?} ${AGENT_ARCH?}"
         depends_on:
